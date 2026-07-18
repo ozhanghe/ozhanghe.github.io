@@ -47,8 +47,8 @@
                         {
                             let parts = tu_arr[i]["metadata"].split(",")[0].split(" - ")
                             let t_cat = parts[0]
-                            let t_subcat = parts[0]
-                            if(parts.length > 1) t_subcat = parts[1]
+                            let t_subcat = parts[0]+" - "+parts[0]
+                            if(parts.length > 1 && parts[1]) t_subcat = parts[0]+" - "+parts[1]
                             let t_ans = tu_arr[i]["answer"]
 
                             let b_parts = bonus_arr[i]["metadata"].split(",")[0].split(" - ")
