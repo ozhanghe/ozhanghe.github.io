@@ -27,16 +27,37 @@
                     let tu_arr = obj["tossups"]
                     let bonus_arr = obj["bonuses"]
                     packet_page = ""
-                    for(let i = 0; i < bonus_arr.length;i++)
+                    if(tu_arr[0]["category"])
                     {
-                        let t_cat = tu_arr[i]["category"]
-                        let t_subcat = tu_arr[i]["category"]+" - "+tu_arr[i]["subcategory"]
-                        let t_ans = tu_arr[i]["answer_sanitized"]
-                        let b_cat = bonus_arr[i]["category"]
-                        let b_subcat = bonus_arr[i]["category"]+" - "+bonus_arr[i]["subcategory"]
-                        let b_ans = bonus_arr[i]["answers_sanitized"][0]+"/"+bonus_arr[i]["answers_sanitized"][1]+"/"+bonus_arr[i]["answers_sanitized"][2]
+                        for(let i = 0; i < bonus_arr.length;i++)
+                        {
+                            let t_cat = tu_arr[i]["category"]
+                            let t_subcat = tu_arr[i]["category"]+" - "+tu_arr[i]["subcategory"]
+                            let t_ans = tu_arr[i]["answer_sanitized"]
+                            let b_cat = bonus_arr[i]["category"]
+                            let b_subcat = bonus_arr[i]["category"]+" - "+bonus_arr[i]["subcategory"]
+                            let b_ans = bonus_arr[i]["answers_sanitized"][0]+"/"+bonus_arr[i]["answers_sanitized"][1]+"/"+bonus_arr[i]["answers_sanitized"][2]
+    
+                            packet_page += `${t_ans}\t${t_cat}\t${t_subcat}\t${b_ans}\t${b_cat}\t${b_subcat}\n`
+                        }
+                    }
+                    else
+                    {
+                        for(let i = 0; i < bonus_arr.length;i++)
+                        {
+                            let parts = tu_arr[i]["metadata"].split(",")[0].split(" - ")
+                            let t_cat = parts[0]
+                            let t_subcat = parts[0]
+                            if(parts.length > 1) t_subcat = parts[1]
+                            let t_ans = tu_arr[i]["answer"]
 
-                        packet_page += `${t_ans}\t${t_cat}\t${t_subcat}\t${b_ans}\t${b_cat}\t${b_subcat}\n`
+                            let b_parts = bonus_arr[i]["metadata"].split(",")[0].split(" - ")
+                            let b_cat = b_parts[0]
+                            let b_subcat = b_parts[0]
+                            if(parts.length > 1) b_subcat = b_parts[1]
+                            let b_ans = bonus_arr[i]["answers"][0] +"/"+bonus_arr[i]["answers"][1]+"/"+bonus_arr[i]["answers"][2]
+                            packet_page += `${t_ans}\t${t_cat}\t${t_subcat}\t${b_ans}\t${b_cat}\t${b_subcat}\n`
+                        }
                     }
                     alert("Read!")
                 };
