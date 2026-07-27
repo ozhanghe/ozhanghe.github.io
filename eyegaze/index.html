@@ -1,0 +1,187 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyeTracker</title>
+    <script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <link rel="stylesheet" href="https://eyegestures.com/eyegestures.css">
+    <script src="https://eyegestures.com/eyegestures.js"></script>
+    <script>
+        alert("Thank you for participating in our study! Please make sure to have signed our informed consent agreement before continuing. To continue, please click OK.")
+        let session = []
+        let dotArray = [];
+        let started = false;
+        function onPoint(point, calibration)
+        {
+            let milliseconds = Date.now();
+            if(started) session.push({"ts": milliseconds, "x": point[0], "y": point[1], "calibration": calibration});
+        };
+
+        function drawGrid(ctx)
+        {
+            for(let i = 1;i <= 3;i++)
+            {
+                ctx.beginPath();
+                ctx.moveTo(i*128, 0);
+                ctx.lineTo(i*128, 512);
+                ctx.stroke();
+            }
+            for(let i = 1;i <= 3;i++)
+            {
+                ctx.beginPath();
+                ctx.moveTo(0, i*128);
+                ctx.lineTo(512, i*128);
+                ctx.stroke();
+            }
+        }
+
+        function drawDot(ctx, loc)
+        {
+            ctx.beginPath();
+            ctx.arc(loc[0], loc[1], 50, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawRandomTwo(ctx)
+        {
+            drawGrid(ctx);
+            let firstind = Math.floor(Math.random()*16);
+            let secondind = Math.floor(Math.random()*16);
+            console.log("start");
+
+            while(firstind == secondind) secondind = Math.floor(Math.random()*16);
+            console.log("done");
+            drawDot(ctx, dotArray[firstind]);
+            drawDot(ctx, dotArray[secondind]);
+        }
+
+        function drawRandomOne(ctx)
+        {
+            drawGrid(ctx);
+            let firstind = Math.floor(Math.random()*16);
+            drawDot(ctx, dotArray[firstind]);
+        }
+
+        function drawCross(ctx)
+        {
+            ctx.beginPath();
+            ctx.moveTo(246, 256);
+            ctx.lineTo(266, 256);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(256, 246);
+            ctx.lineTo(256, 266);
+            ctx.stroke();
+        }
+
+        function fixation(ctx)
+        {
+            ctx.clearRect(0, 0, 512, 512);
+            drawCross(ctx);
+            setTimeout(() => {
+                ctx.clearRect(0, 0, 512, 512);
+                drawRandomTwo(ctx);
+            }, 500);
+        }
+
+        function distractor_probe(ctx)
+        {
+            ctx.clearRect(0, 0, 512, 512);
+            drawCross(ctx);
+            setTimeout(() => {
+                ctx.clearRect(0, 0, 512, 512);
+                ctx.drawImage(document.getElementById("distractor"), 0, 0, 512, 512);
+            }, 500);
+            setTimeout(() => {
+                ctx.clearRect(0, 0, 512, 512);
+                drawCross(ctx);
+            }, 1000);
+            setTimeout(() => {
+                ctx.clearRect(0, 0, 512, 512);
+                drawRandomOne(ctx);
+            }, 1500);
+            setTimeout(() => {
+                ctx.clearRect(0, 0, 512, 512);
+                prompt("Was the one dot in any of the past three two-dot grids shown previously?");
+            }, 3000);
+        }
+
+        function draw()
+        {
+            const canvas = document.getElementById("memoryTask");
+            const ctx = canvas.getContext("2d");
+
+            for(let i = 0;i < 4;i++)
+            {
+                for(let j = 0;j < 4;j++)
+                {
+                    dotArray.push([64+128*i, 64+128*j])
+                }
+            }
+
+            ctx.fillStyle = "blue";
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "blue";  
+            
+            setInterval(() => {
+                fixation(ctx);
+                setTimeout(() => {
+                    fixation(ctx);
+                }, 1250);
+                setTimeout(() => {
+                    fixation(ctx);
+                }, 2500);
+                setTimeout(() => {
+                    distractor_probe(ctx);
+                }, 3750);
+            }, 6750);
+        }
+
+        function startTest()
+        {
+            started = true;
+            document.getElementById("memoryTask").style = "border:1px solid red";
+            document.getElementById("instructions").style = "display: none";
+            setTimeout(() => {
+                let blob = new Blob([JSON.stringify(session)], {type: "application/json"});
+                let link = document.createElement("a");
+                let url = URL.createObjectURL(blob);
+                link.href = url;
+                link.download = "data.json";
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                window.location.href = "/completed.html"
+            }, 6*60*1000);
+            draw();
+        }
+
+        window.onload = () => {
+            const gestures = new EyeGestures("video", onPoint);
+            gestures.start();
+        }
+    </script>
+</head> 
+<body>
+    <video id="video" width="640" height="480" autoplay style="display: none;"></video>
+    <div id="instructions">
+        <h3 style="font-family: Arial, Helvetica, sans-serif; text-align: center;">Once calibration is finished and the red circles disappear, please focus your attention on the blue dots. Do not move your head, as it will recalibrate if the head is moved.</h3>
+        <h3 style="font-family: Arial, Helvetica, sans-serif; text-align: center;">If the canvas shows a cross, focus your eyes on the cross.</h3>
+        <h3 style="font-family: Arial, Helvetica, sans-serif; text-align: center;">The canvas will show a set of two-dot grid, and then an image of a penguin, and then a one-dot grids.</h3>
+        <h3 style="font-family: Arial, Helvetica, sans-serif; text-align: center;">The test will then ask you questions about the one-dot grids and the previous two-dot grids.</h3>
+        <h3 style="font-family: Arial, Helvetica, sans-serif; text-align: center;">Once calibration is finished and you are ready to begin, press Start. (the test will only finish after 6 minutes)</h3>
+        <button style="display: block; margin: 0 auto;" onclick="startTest()">Start</button>
+    </div>
+
+    <div id="status" style="display: none;">Initializing...</div>
+    <div id="error" style="display: none;"></div>
+    <img id="distractor" src="/distractor.png" style="display: none;">
+    <div style="text-align: center;">
+        <canvas id="memoryTask" width="512" height="512" style="border:1px solid red; display: none;"></canvas>
+    </div>
+</body>
+</html>
